@@ -3,21 +3,16 @@
 PROG = hello
 LIB_HELLO = libhello
 LIB_BYE = libgoodbye
-CC = gcc
-OUTPUT_DIR = default_folder
 
-host: OUTPUT_DIR = host
-host: $(OUTPUT_DIR)
-host: CC = gcc
-host: $(PROG)
+ifeq (host,$(filter host,$(MAKECMDGOALS)))
+	OUTPUT_DIR = host
+	CC = gcc
+else ifeq (target,$(filter target,$(MAKECMDGOALS)))
+	OUTPUT_DIR := target
+	CC = arm-cortex_a8-linux-gnueabihf-gcc
+endif
 
-target:	OUTPUT_DIR = target
-target:	$(OUTPUT_DIR) 
-target: CC = ~/x-tools/arm-cortex_a8-linux-gnueabihf/bin/arm-cortex_a8-linux-gnueabihf-gcc 
-target:	$(PROG)
-
-$(OUTPUT_DIR):
-	@mkdir -p $(OUTPUT_DIR)
+host target: $(PROG)
 
 clean:
 	rm -rf host target
@@ -32,9 +27,10 @@ $(LIB_BYE): 	$(LIB_BYE).c world.h
 				$(CC) -c $(LIB_BYE).c -o $(OUTPUT_DIR)/$(LIB_BYE).o
 				ar cr $(OUTPUT_DIR)/$(LIB_BYE).a $(OUTPUT_DIR)/$(LIB_BYE).o
 
-$(PROG).o:		$(PROG).c
+$(PROG).o:		$(PROG).c 
+				@mkdir -p $(OUTPUT_DIR)
 				$(CC) -o $(OUTPUT_DIR)/$(PROG).o -c $(PROG).c
 
-$(PROG): 		$(PROG).c  $(PROG).o $(LIB_HELLO) $(LIB_BYE)
+$(PROG): 		$(PROG).o $(LIB_HELLO) $(LIB_BYE)
 				$(CC) -o $(OUTPUT_DIR)/$(PROG) $(OUTPUT_DIR)/$(PROG).o -L./$(OUTPUT_DIR) -lhello -Wl,-rpath,. -L./$(OUTPUT_DIR) -lgoodbye 
 	
